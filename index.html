@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,19 +19,22 @@
     <span id="travelTimeVal">40</span> s
   </label>
 
+  
+  
   <div id="plot"></div>
 
   <script>
     const Cmax = 70;
     const nectarPerFlower = 1.0;
     const maxTime = 600;
-    const loadTime = 1.7;
-    const flowerTravel = 1;
-    const k = 0.01;
     const timeSteps = Array.from({ length: 100 }, (_, i) => i * (maxTime / 100));
 
     function updatePlot() {
       const travelTime = parseFloat(document.getElementById("travelTime").value);
+      const loadTime = 1.7;
+      const flowerTravel = 1;
+      const k = 0.01;  // Fixed k
+
       const timePerFlower = loadTime + flowerTravel;
       const nSteps = timeSteps.map(t => t / timePerFlower);
       const nectar = nSteps.map(n => n * nectarPerFlower);
@@ -95,8 +99,31 @@
         width: 900,
         height: 600,
         xaxis: { range: [-300, 600] },
-        yaxis: { range: [0, 70] },
-        showlegend: true
+        yaxis: {
+          range: [0, 70],
+          title: "Crop Content (μL)" },
+        showlegend: true,
+    annotations: [
+      {
+        x: -150,
+        y: -0.1,
+        xref: 'x',
+        yref: 'paper',
+        text: 'Travel Time (s)',
+        showarrow: false,
+        font: { size: 14 }
+      },
+      {
+        x: 300,
+        y: -0.1,
+        xref: 'x',
+        yref: 'paper',
+        text: 'Time in Patch (s)',
+        showarrow: false,
+        font: { size: 14 }
+      }
+    ],
+    
       };
 
       Plotly.newPlot("plot", data, layout);
