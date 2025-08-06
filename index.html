@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Marginal Value Theorem with Correct Average Gain Line</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Marginal Value Theorem: Average Gain Line from Hive to Patch</h2>
+
+  <label>Travel Time to Patch (s):
+    <input type="range" id="travelTime" min="10" max="300" value="40" step="1"
+      oninput="document.getElementById('travelTimeVal').innerText = this.value">
+    <span id="travelTimeVal">40</span> s
+  </label>
+
+  <div id="plot"></div>
+
+  <script>
+    const Cmax = 70;
+    const nectarPerFlower = 1.0;
+    const maxTime = 600;
+    const loadTime = 1.7;
+    const flowerTravel = 1;
+    const k = 0.01;
+    const timeSteps = Array.from({ length: 100 }, (_, i) => i * (maxTime / 100));
+
+    function updatePlot() {
+      const travelTime = parseFloat(document.getElementById("travelTime").value);
+      const timePerFlower = loadTime + flowerTravel;
+      const nSteps = timeSteps.map(t => t / timePerFlower);
+      const nectar = nSteps.map(n => n * nectarPerFlower);
+      const cropContent = nectar.map(n => Cmax * (1 - Math.exp(-k * n)));
+
+      const totalTime = timeSteps.map(t => t + travelTime);
+      const avgGain = cropContent.map((c, i) => c / totalTime[i]);
+
+      const marginalGain = cropContent.map((_, i, arr) =>
+        i === 0 ? 0 : (arr[i] - arr[i - 1]) / (timeSteps[i] - timeSteps[i - 1])
+      );
+
+      let optimalIndex = 0;
+      let minDiff = Infinity;
+      for (let i = 1; i < cropContent.length; i++) {
+        const diff = Math.abs(marginalGain[i] - avgGain[i]);
+        if (diff < minDiff) {
+          minDiff = diff;
+          optimalIndex = i;
+        }
+      }
+
+      const slope = avgGain[optimalIndex];
+      const tangentX = [];
+      const tangent = [];
+      const xStart = -travelTime;
+      const xEnd = 600;
+      const steps = 100;
+      const dx = (xEnd - xStart) / steps;
+
+      for (let i = 0; i <= steps; i++) {
+        const x = xStart + i * dx;
+        tangentX.push(x);
+        tangent.push(slope * (x + travelTime));
+      }
+
+      const data = [
+        {
+          x: timeSteps,
+          y: cropContent,
+          mode: "lines",
+          name: "Crop Content",
+          line: { color: "green" }
+        },
+        {
+          x: tangentX,
+          y: tangent,
+          mode: "lines",
+          name: "Average Gain Line",
+          line: { dash: "dash", color: "red" }
+        },
+        {
+          x: [timeSteps[optimalIndex]],
+          y: [cropContent[optimalIndex]],
+          mode: "markers",
+          name: "Optimal Point",
+          marker: { size: 10, color: "black" }
+        }
+      ];
+
+      const layout = {
+        width: 900,
+        height: 600,
+        xaxis: { range: [-300, 600] },
+        yaxis: { range: [0, 70] },
+        showlegend: true
+      };
+
+      Plotly.newPlot("plot", data, layout);
+    }
+
+    document.querySelectorAll("input").forEach(el => el.addEventListener("input", updatePlot));
+    updatePlot();
+  </script>
+</body>
+</html>
